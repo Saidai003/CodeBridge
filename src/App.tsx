@@ -52,6 +52,23 @@ export default function App() {
   const [hoverInfo, setHoverInfo] = useState<{ word: string; info: any; x: number; y: number } | null>(null);
 
   const studioRef = useRef<HTMLDivElement>(null);
+  const pseudoTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const pseudoIndicatorRef = useRef<HTMLDivElement>(null);
+
+  // Sync scroll between textarea and indicators
+  useEffect(() => {
+    const textarea = pseudoTextareaRef.current;
+    const indicator = pseudoIndicatorRef.current;
+    
+    if (!textarea || !indicator) return;
+
+    const handleScroll = () => {
+      indicator.scrollTop = textarea.scrollTop;
+    };
+
+    textarea.addEventListener('scroll', handleScroll);
+    return () => textarea.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Save preferences
   useEffect(() => {
@@ -427,10 +444,13 @@ export default function App() {
                   </span>
                 )}
               </div>
-              <div className="h-[400px] overflow-auto flex">
+              <div className="h-[400px] overflow-auto flex relative">
                 {/* Line number indicators with mapping colors */}
                 {mappings.length > 0 && (
-                  <div className="flex-shrink-0 w-2 flex flex-col">
+                  <div 
+                    ref={pseudoIndicatorRef}
+                    className="flex-shrink-0 w-2 flex flex-col overflow-hidden"
+                  >
                     {pseudocode.split('\n').map((_, idx) => {
                       const lineNum = idx + 1;
                       const mappingIndex = mappings.findIndex(m => 
@@ -453,6 +473,7 @@ export default function App() {
                 )}
                 {/* Always editable textarea */}
                 <textarea
+                  ref={pseudoTextareaRef}
                   value={pseudocode}
                   onChange={(e) => {
                     setPseudocode(e.target.value);
