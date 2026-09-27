@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Code2, Play, Key, Heart, Share2, Sparkles, ChevronDown,
   BookOpen, Globe, Terminal, Loader2, Check, ExternalLink
@@ -6,10 +6,10 @@ import {
 import { Language, t } from './i18n';
 import { translatePseudocode, type Mapping, type TranslationResult } from './lib/gemini-client';
 import { validateMappings, getColorForIndex, getActiveColorForIndex, getBorderColorForIndex } from './lib/mapping';
-import { getHoverInfo } from './lib/hover-data';
 import { executePython, initPyodide } from './lib/pyodide';
 import { Tutorial } from './components/Tutorial';
 import { Assistant } from './components/Assistant';
+import { CodeEditor } from './components/CodeEditor';
 
 // Demo data for landing
 const DEMO_PSEUDO = `Set list numbers to [1, 2, 3, 4, 5]
@@ -49,7 +49,6 @@ export default function App() {
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [copied, setCopied] = useState(false);
   const [hoveredMapping, setHoveredMapping] = useState<string | null>(null);
-  const [hoverInfo, setHoverInfo] = useState<{ word: string; info: any; x: number; y: number } | null>(null);
   const [targetLanguage, setTargetLanguage] = useState(() => localStorage.getItem('codebridge_target_lang') || 'python');
 
   const studioRef = useRef<HTMLDivElement>(null);
@@ -60,38 +59,19 @@ export default function App() {
   useEffect(() => {
     const textarea = pseudoTextareaRef.current;
     const indicator = pseudoIndicatorRef.current;
-    
     if (!textarea || !indicator) return;
-
-    const handleScroll = () => {
-      indicator.scrollTop = textarea.scrollTop;
-    };
-
+    const handleScroll = () => { indicator.scrollTop = textarea.scrollTop; };
     textarea.addEventListener('scroll', handleScroll);
     return () => textarea.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Save preferences
-  useEffect(() => {
-    localStorage.setItem('codebridge_lang', lang);
-  }, [lang]);
-
-  useEffect(() => {
-    localStorage.setItem('codebridge_apikey', apiKey);
-  }, [apiKey]);
-
-  useEffect(() => {
-    localStorage.setItem('codebridge_target_lang', targetLanguage);
-  }, [targetLanguage]);
-
-
+  useEffect(() => { localStorage.setItem('codebridge_lang', lang); }, [lang]);
+  useEffect(() => { localStorage.setItem('codebridge_apikey', apiKey); }, [apiKey]);
+  useEffect(() => { localStorage.setItem('codebridge_target_lang', targetLanguage); }, [targetLanguage]);
 
   // Init Pyodide
-  useEffect(() => {
-    initPyodide().catch(() => {});
-  }, []);
-
-  // Load Pyodide script
+  useEffect(() => { initPyodide().catch(() => {}); }, []);
   useEffect(() => {
     if (!document.querySelector('script[src*="pyodide"]')) {
       const script = document.createElement('script');
@@ -100,24 +80,17 @@ export default function App() {
     }
   }, []);
 
-  const scrollToStudio = () => {
-    studioRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToStudio = () => { studioRef.current?.scrollIntoView({ behavior: 'smooth' }); };
 
   const handleComplete = async () => {
-    if (!apiKey) {
-      setShowApiKeyInput(true);
-      return;
-    }
+    if (!apiKey) { setShowApiKeyInput(true); return; }
     if (!pseudocode.trim()) return;
-
     setIsGenerating(true);
     try {
       const result: TranslationResult = await translatePseudocode(apiKey, pseudocode, targetLanguage);
       const pseudoLines = pseudocode.split('\n').length;
       const codeLines = result.generated_code.split('\n').length;
       const validMappings = validateMappings(result.mappings || [], pseudoLines, codeLines);
-      
       setGeneratedCode(result.generated_code);
       setMappings(validMappings);
     } catch (err: any) {
@@ -149,12 +122,8 @@ export default function App() {
   };
 
   const handleTutorialNext = () => {
-    if (tutorialStep < 5) {
-      setTutorialStep(prev => prev + 1);
-    } else {
-      setShowTutorial(false);
-      localStorage.setItem('codebridge_tutorial_seen', 'true');
-    }
+    if (tutorialStep < 5) { setTutorialStep(prev => prev + 1); }
+    else { setShowTutorial(false); localStorage.setItem('codebridge_tutorial_seen', 'true'); }
   };
 
   const handleTutorialSkip = () => {
@@ -162,29 +131,7 @@ export default function App() {
     localStorage.setItem('codebridge_tutorial_seen', 'true');
   };
 
-  // Handle hover on code editor
-  const handleCodeEditorHover = useCallback((e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    
-    // Get the text content of the hovered element
-    const text = target.textContent?.trim() || '';
-    
-    // Try to find a word that matches our hover data
-    // Split by common delimiters and check each word
-    const words = text.split(/[\s\(\)\{\}\[\],;:=<>+\-*/&|!?.]+/).filter(w => w.length > 0);
-    
-    for (const word of words) {
-      const info = getHoverInfo(word);
-      if (info) {
-        setHoverInfo({ word, info, x: e.clientX, y: e.clientY });
-        return;
-      }
-    }
-    
-    setHoverInfo(null);
-  }, []);
-
-  // Render line with mapping colors
+  // Render pseudo-code lines with mapping colors
   const renderColoredLines = (text: string, lineMappings: Mapping[], side: 'pseudo' | 'code') => {
     const lines = text.split('\n');
     const elements: React.ReactNode[] = [];
@@ -195,24 +142,19 @@ export default function App() {
         const range = side === 'pseudo' ? m.pseudocode_lines : m.code_lines;
         return lineNum >= range[0] && lineNum <= range[1];
       });
-      
+
       const bgColor = mappingIndex >= 0 ? getColorForIndex(mappingIndex) : 'transparent';
       const isHovered = mappingIndex >= 0 && hoveredMapping === lineMappings[mappingIndex]?.id;
       const hoverBg = isHovered && mappingIndex >= 0 ? getActiveColorForIndex(mappingIndex) : bgColor;
-      
-      // Check if this is the first line of a mapping
       const isFirstLineOfMapping = mappingIndex >= 0 && lineNum === (side === 'pseudo' ? lineMappings[mappingIndex].pseudocode_lines[0] : lineMappings[mappingIndex].code_lines[0]);
 
-      // If it's the first line and has a label, add the label above
       if (isFirstLineOfMapping && lineMappings[mappingIndex]?.label) {
         elements.push(
           <div
             key={`label-${idx}`}
             className="px-3 py-0.5 text-xs font-semibold transition-colors duration-150"
             style={{ backgroundColor: bgColor, color: getBorderColorForIndex(mappingIndex) }}
-            onMouseEnter={() => {
-              if (mappingIndex >= 0) setHoveredMapping(lineMappings[mappingIndex].id);
-            }}
+            onMouseEnter={() => { if (mappingIndex >= 0) setHoveredMapping(lineMappings[mappingIndex].id); }}
             onMouseLeave={() => setHoveredMapping(null)}
           >
             ← {lineMappings[mappingIndex].label}
@@ -225,9 +167,7 @@ export default function App() {
           key={idx}
           className={`px-3 py-0.5 transition-colors duration-150 cursor-pointer ${isHovered ? 'ring-1 ring-inset ring-blue-400/30' : ''}`}
           style={{ backgroundColor: hoverBg }}
-          onMouseEnter={() => {
-            if (mappingIndex >= 0) setHoveredMapping(lineMappings[mappingIndex].id);
-          }}
+          onMouseEnter={() => { if (mappingIndex >= 0) setHoveredMapping(lineMappings[mappingIndex].id); }}
           onMouseLeave={() => setHoveredMapping(null)}
         >
           <span className="text-gray-800 dark:text-gray-200 font-mono text-sm whitespace-pre-wrap">{line || ' '}</span>
@@ -238,7 +178,6 @@ export default function App() {
     return elements;
   };
 
-  // Language selector
   const LanguageSelector = () => (
     <div className="flex items-center gap-2">
       <Globe size={16} className="text-gray-500" />
@@ -256,42 +195,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 text-gray-900 dark:text-gray-100">
-      {/* Tutorial Overlay */}
       {showTutorial && (
-        <Tutorial
-          step={tutorialStep}
-          lang={lang}
-          onNext={handleTutorialNext}
-          onSkip={handleTutorialSkip}
-          totalSteps={6}
-        />
-      )}
-
-      {/* Hover Tooltip */}
-      {hoverInfo && (
-        <div
-          className="fixed z-50 bg-gray-900 text-white rounded-lg shadow-xl p-3 max-w-xs text-sm pointer-events-none"
-          style={{ left: hoverInfo.x + 12, top: hoverInfo.y - 10 }}
-        >
-          <div className="font-bold text-blue-300 mb-1">{hoverInfo.word}</div>
-          {hoverInfo.info.signature && (
-            <code className="text-xs text-green-300 block mb-1">{hoverInfo.info.signature}</code>
-          )}
-          <p className="text-gray-300">{hoverInfo.info.description}</p>
-          <a
-            href={hoverInfo.info.docUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 text-xs mt-1 inline-flex items-center gap-1 hover:underline"
-          >
-            <ExternalLink size={10} /> Docs
-          </a>
-        </div>
+        <Tutorial step={tutorialStep} lang={lang} onNext={handleTutorialNext} onSkip={handleTutorialSkip} totalSteps={6} />
       )}
 
       {/* ====== LANDING SECTION ====== */}
       <section className="min-h-screen flex flex-col">
-        {/* Nav */}
         <nav className="flex items-center justify-between px-6 py-4 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-2">
             <Code2 size={28} className="text-blue-500" />
@@ -311,7 +220,6 @@ export default function App() {
           </div>
         </nav>
 
-        {/* Hero */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 pb-20">
           <div className="text-center max-w-3xl mb-12">
             <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -325,9 +233,7 @@ export default function App() {
             </p>
           </div>
 
-          {/* Demo */}
           <div className="w-full max-w-5xl grid md:grid-cols-2 gap-4 mb-12">
-            {/* Pseudo-code demo */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="px-4 py-2 bg-gray-100 dark:bg-gray-750 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
                 <BookOpen size={14} className="text-gray-500" />
@@ -338,7 +244,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Code demo */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="px-4 py-2 bg-gray-100 dark:bg-gray-750 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
                 <Terminal size={14} className="text-gray-500" />
@@ -350,7 +255,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* CTA */}
           <button
             onClick={scrollToStudio}
             className="flex items-center gap-2 px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5"
@@ -365,7 +269,6 @@ export default function App() {
       {/* ====== STUDIO SECTION ====== */}
       <section ref={studioRef} className="min-h-screen px-4 md:px-6 py-8">
         <div className="max-w-7xl mx-auto">
-          {/* Studio Header */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <h2 className="text-2xl font-bold flex items-center gap-2">
               <Code2 size={24} className="text-blue-500" />
@@ -374,15 +277,33 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Tutorial Button */}
               <button
-                onClick={() => {
-                  setTutorialStep(0);
-                  setShowTutorial(true);
-                }}
+                onClick={() => { setTutorialStep(0); setShowTutorial(true); }}
                 className="flex items-center gap-1.5 px-3 py-2 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-lg text-sm font-medium transition-colors"
               >
                 <BookOpen size={14} />
                 {t('tutorialButton', lang)}
               </button>
+
+              {/* Target Language Selector */}
+              <select
+                value={targetLanguage}
+                onChange={(e) => setTargetLanguage(e.target.value)}
+                className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="python">{t('languagePython', lang)}</option>
+                <option value="javascript">{t('languageJavaScript', lang)}</option>
+                <option value="typescript">{t('languageTypeScript', lang)}</option>
+                <option value="java">{t('languageJava', lang)}</option>
+                <option value="cpp">{t('languageCpp', lang)}</option>
+                <option value="csharp">{t('languageCsharp', lang)}</option>
+                <option value="go">{t('languageGo', lang)}</option>
+                <option value="ruby">{t('languageRuby', lang)}</option>
+                <option value="php">{t('languagePhp', lang)}</option>
+                <option value="swift">{t('languageSwift', lang)}</option>
+                <option value="kotlin">{t('languageKotlin', lang)}</option>
+                <option value="luau">{t('languageLuau', lang)}</option>
+                <option value="csharp-unity">{t('languageCSharpUnity', lang)}</option>
+              </select>
 
               {/* API Key */}
               <div className="relative">
@@ -420,30 +341,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Target Language Selector */}
-              <div className="flex items-center gap-2">
-                <select
-                  value={targetLanguage}
-                  onChange={(e) => setTargetLanguage(e.target.value)}
-                  className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="python">{t('languagePython', lang)}</option>
-                  <option value="javascript">{t('languageJavaScript', lang)}</option>
-                  <option value="typescript">{t('languageTypeScript', lang)}</option>
-                  <option value="java">{t('languageJava', lang)}</option>
-                  <option value="cpp">{t('languageCpp', lang)}</option>
-                  <option value="csharp">{t('languageCsharp', lang)}</option>
-                  <option value="go">{t('languageGo', lang)}</option>
-                  <option value="ruby">{t('languageRuby', lang)}</option>
-                  <option value="php">{t('languagePhp', lang)}</option>
-                  <option value="swift">{t('languageSwift', lang)}</option>
-                  <option value="kotlin">{t('languageKotlin', lang)}</option>
-                  <option value="luau">{t('languageLuau', lang)}</option>
-                  <option value="csharp-unity">{t('languageCSharpUnity', lang)}</option>
-                </select>
-              </div>
-
-              {/* Actions */}
               <button
                 onClick={handleComplete}
                 disabled={isGenerating || !pseudocode.trim()}
@@ -496,15 +393,11 @@ export default function App() {
                 )}
               </div>
               <div className="h-[400px] overflow-auto flex relative">
-                {/* Line number indicators with mapping colors */}
                 {mappings.length > 0 && (
-                  <div 
-                    ref={pseudoIndicatorRef}
-                    className="flex-shrink-0 w-2 flex flex-col overflow-hidden"
-                  >
+                  <div ref={pseudoIndicatorRef} className="flex-shrink-0 w-2 flex flex-col overflow-hidden">
                     {pseudocode.split('\n').map((_, idx) => {
                       const lineNum = idx + 1;
-                      const mappingIndex = mappings.findIndex(m => 
+                      const mappingIndex = mappings.findIndex(m =>
                         lineNum >= m.pseudocode_lines[0] && lineNum <= m.pseudocode_lines[1]
                       );
                       const bgColor = mappingIndex >= 0 ? getColorForIndex(mappingIndex) : 'transparent';
@@ -513,25 +406,19 @@ export default function App() {
                           key={idx}
                           className="h-[1.625rem] transition-colors duration-150"
                           style={{ backgroundColor: bgColor }}
-                          onMouseEnter={() => {
-                            if (mappingIndex >= 0) setHoveredMapping(mappings[mappingIndex].id);
-                          }}
+                          onMouseEnter={() => { if (mappingIndex >= 0) setHoveredMapping(mappings[mappingIndex].id); }}
                           onMouseLeave={() => setHoveredMapping(null)}
                         />
                       );
                     })}
                   </div>
                 )}
-                {/* Always editable textarea */}
                 <textarea
                   ref={pseudoTextareaRef}
                   value={pseudocode}
                   onChange={(e) => {
                     setPseudocode(e.target.value);
-                    // Clear mappings when pseudo-code changes
-                    if (mappings.length > 0) {
-                      setMappings([]);
-                    }
+                    if (mappings.length > 0) setMappings([]);
                   }}
                   placeholder={lang === 'es' ? 'Escribí tu pseudo-código acá...' : lang === 'zh' ? '在这里写你的伪代码...' : 'Write your pseudo-code here...'}
                   className="flex-1 h-full p-4 resize-none font-mono text-sm bg-transparent text-gray-800 dark:text-gray-200 focus:outline-none placeholder-gray-400 whitespace-pre-wrap"
@@ -540,7 +427,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Generated Code */}
+            {/* Generated Code with Shiki + Floating UI */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
               <div className="px-4 py-2 bg-gray-50 dark:bg-gray-750 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
                 <Terminal size={14} className="text-green-500" />
@@ -551,18 +438,21 @@ export default function App() {
                   </span>
                 )}
               </div>
-              <div
-                className="h-[400px] overflow-auto"
-                onMouseMove={handleCodeEditorHover}
-                onMouseLeave={() => setHoverInfo(null)}
-              >
+              <div className="h-[400px] overflow-auto">
                 {generatedCode ? (
                   mappings.length > 0 ? (
-                    renderColoredLines(generatedCode, mappings, 'code')
+                    <div className="relative">
+                      {/* Colored background layer */}
+                      <div className="absolute inset-0 pointer-events-none">
+                        {renderColoredLines(generatedCode, mappings, 'code')}
+                      </div>
+                      {/* Code editor with syntax highlighting and hover */}
+                      <div className="relative">
+                        <CodeEditor code={generatedCode} language={targetLanguage} readOnly />
+                      </div>
+                    </div>
                   ) : (
-                    <pre className="p-4 font-mono text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                      {generatedCode}
-                    </pre>
+                    <CodeEditor code={generatedCode} language={targetLanguage} readOnly />
                   )
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
@@ -586,10 +476,7 @@ export default function App() {
                   <Terminal size={14} />
                   {t('outputLabel', lang)}
                 </span>
-                <button
-                  onClick={() => setOutput('')}
-                  className="text-xs text-gray-400 hover:text-gray-200"
-                >
+                <button onClick={() => setOutput('')} className="text-xs text-gray-400 hover:text-gray-200">
                   {t('clearOutput', lang)}
                 </button>
               </div>
@@ -599,7 +486,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Generating indicator */}
           {isGenerating && (
             <div className="text-center py-4">
               <Loader2 size={24} className="animate-spin mx-auto text-blue-500 mb-2" />
