@@ -2,12 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createHighlighter, type BundledLanguage, type BundledTheme, type HighlighterGeneric } from 'shiki';
 import { computePosition, flip, shift, offset } from '@floating-ui/dom';
 import { getHoverInfo, type HoverInfo } from '../lib/hover-data';
+import { getColorForIndex, getBorderColorForIndex, getActiveColorForIndex } from '../lib/mapping';
+import type { Mapping } from '../lib/gemini-client';
 
 interface CodeEditorProps {
   code: string;
   language: string;
-  onChange?: (code: string) => void;
-  readOnly?: boolean;
+  mappings?: Mapping[];
+  hoveredMapping?: string | null;
+  onMappingHover?: (mappingId: string | null) => void;
 }
 
 // Mapeo de lenguajes personalizados a lenguajes de Shiki
@@ -23,8 +26,8 @@ const languageMap: Record<string, BundledLanguage> = {
   'php': 'php',
   'swift': 'swift',
   'kotlin': 'kotlin',
-  'luau': 'lua', // Luau es similar a Lua
-  'csharp-unity': 'csharp', // Unity usa C#
+  'luau': 'lua',
+  'csharp-unity': 'csharp',
 };
 
 interface TooltipData {
@@ -34,7 +37,13 @@ interface TooltipData {
   y: number;
 }
 
-export const CodeEditor: React.FC<CodeEditorProps> = ({ code, language, onChange, readOnly = false }) => {
+export const CodeEditor: React.FC<CodeEditorProps> = ({ 
+  code, 
+  language, 
+  mappings = [],
+  hoveredMapping,
+  onMappingHover 
+}) => {
   const codeContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [highlighter, setHighlighter] = useState<HighlighterGeneric<BundledLanguage, BundledTheme> | null>(null);
@@ -44,7 +53,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ code, language, onChange
   useEffect(() => {
     const initHighlighter = async () => {
       const hl = await createHighlighter({
-        themes: ['github-dark', 'github-light'],
+        themes: ['github-dark'],
         langs: Object.values(languageMap),
       });
       setHighlighter(hl);
@@ -56,22 +65,53 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ code, language, onChange
     };
   }, []);
 
-  // Renderizar código con Shiki y agregar event listeners
+  // Renderizar código con Shiki, mappings y hover
   useEffect(() => {
     if (!highlighter || !codeContainerRef.current) return;
 
     const shikiLang = languageMap[language] || 'text';
-    const html = highlighter.codeToHtml(code, {
-      lang: shikiLang,
-      theme: 'github-dark',
+    const lines = code.split('\n');
+    
+    // Crear HTML con mappings
+    let html = '<pre class="shiki github-dark" style="background-color:#24292e;color:#e1e4e8"><code>';
+    
+    lines.forEach((line, idx) => {
+      const lineNum = idx + 1;
+      const mappingIndex = mappings.findIndex(m => 
+        lineNum >= m.code_lines[0] && lineNum <= m.code_lines[1]
+      );
+      
+      const isFirstLineOfMapping = mappingIndex >= 0 && lineNum === mappings[mappingIndex].code_lines[0];
+      const isHovered = mappingIndex >= 0 && hoveredMapping === mappings[mappingIndex]?.id;
+      
+      // Agregar label arriba si es la primera línea
+      if (isFirstLineOfMapping && mappings[mappingIndex]?.label) {
+        const labelColor = getBorderColorForIndex(mappingIndex);
+        html += `<div style="padding:2px 8px;font-size:11px;font-weight:600;color:${labelColor};background:${getColorForIndex(mappingIndex)}">← ${mappings[mappingIndex].label}</div>`;
+      }
+      
+      // Background color para la línea
+      const bgColor = mappingIndex >= 0 ? (isHovered ? getActiveColorForIndex(mappingIndex) : getColorForIndex(mappingIndex)) : 'transparent';
+      
+      html += `<div class="code-line" data-line="${lineNum}" data-mapping="${mappingIndex}" style="background:${bgColor};padding:2px 8px;transition:background 0.15s">`;
+      
+      // Resaltar la línea con Shiki
+      const lineHtml = highlighter.codeToHtml(line, { lang: shikiLang, theme: 'github-dark' });
+      // Extraer solo el contenido del <code>
+      const codeMatch = lineHtml.match(/<code[^>]*>([\s\S]*?)<\/code>/);
+      html += codeMatch ? codeMatch[1] : line;
+      
+      html += '</div>';
     });
-
+    
+    html += '</code></pre>';
     codeContainerRef.current.innerHTML = html;
 
-    // Agregar event listeners para hover en cada token
-    const tokens = codeContainerRef.current.querySelectorAll('.shiki span');
+    // Agregar event listeners para hover en tokens y mappings
     const cleanupFunctions: (() => void)[] = [];
 
+    // Hover para tooltips en tokens
+    const tokens = codeContainerRef.current.querySelectorAll('.shiki span');
     tokens.forEach((token) => {
       const htmlToken = token as HTMLElement;
       
@@ -103,10 +143,35 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ code, language, onChange
       });
     });
 
+    // Hover para mappings
+    const codeLines = codeContainerRef.current.querySelectorAll('.code-line');
+    codeLines.forEach((lineEl) => {
+      const htmlLine = lineEl as HTMLElement;
+      const mappingIdx = parseInt(htmlLine.dataset.mapping || '-1');
+      
+      if (mappingIdx >= 0 && mappings[mappingIdx]) {
+        const handleMouseEnter = () => {
+          onMappingHover?.(mappings[mappingIdx].id);
+        };
+        
+        const handleMouseLeave = () => {
+          onMappingHover?.(null);
+        };
+        
+        htmlLine.addEventListener('mouseenter', handleMouseEnter);
+        htmlLine.addEventListener('mouseleave', handleMouseLeave);
+        
+        cleanupFunctions.push(() => {
+          htmlLine.removeEventListener('mouseenter', handleMouseEnter);
+          htmlLine.removeEventListener('mouseleave', handleMouseLeave);
+        });
+      }
+    });
+
     return () => {
       cleanupFunctions.forEach(fn => fn());
     };
-  }, [code, language, highlighter]);
+  }, [code, language, highlighter, mappings, hoveredMapping]);
 
   // Posicionar tooltip con Floating UI
   useEffect(() => {
@@ -138,13 +203,11 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ code, language, onChange
     <div className="relative">
       <div
         ref={codeContainerRef}
-        className="code-editor-content"
+        className="code-editor-content overflow-auto"
         style={{
           fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
           fontSize: '14px',
           lineHeight: '1.5',
-          padding: '16px',
-          overflow: 'auto',
           minHeight: '400px',
         }}
       />
@@ -152,7 +215,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({ code, language, onChange
       {tooltip && (
         <div
           ref={tooltipRef}
-          className="fixed z-50 bg-gray-900 text-white rounded-lg shadow-xl p-3 max-w-xs text-sm pointer-events-none"
+          className="fixed z-50 bg-gray-900 text-white rounded-lg shadow-xl p-3 max-w-xs text-sm pointer-events-none border border-gray-700"
           style={{
             transform: 'translateX(-50%)',
           }}

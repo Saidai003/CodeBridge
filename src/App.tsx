@@ -440,20 +440,13 @@ export default function App() {
               </div>
               <div className="h-[400px] overflow-auto">
                 {generatedCode ? (
-                  mappings.length > 0 ? (
-                    <div className="relative">
-                      {/* Colored background layer */}
-                      <div className="absolute inset-0 pointer-events-none">
-                        {renderColoredLines(generatedCode, mappings, 'code')}
-                      </div>
-                      {/* Code editor with syntax highlighting and hover */}
-                      <div className="relative">
-                        <CodeEditor code={generatedCode} language={targetLanguage} readOnly />
-                      </div>
-                    </div>
-                  ) : (
-                    <CodeEditor code={generatedCode} language={targetLanguage} readOnly />
-                  )
+                  <CodeEditor 
+                    code={generatedCode} 
+                    language={targetLanguage}
+                    mappings={mappings}
+                    hoveredMapping={hoveredMapping}
+                    onMappingHover={setHoveredMapping}
+                  />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
                     <div className="text-center">
