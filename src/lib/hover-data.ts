@@ -359,6 +359,254 @@ export const pythonKeywords: Record<string, HoverInfo> = {
     docUrl: 'https://react.dev/reference/react/useCallback',
     signature: 'const fn = useCallback(() => { }, [deps])'
   },
+  // Luau (Roblox) keywords and globals
+  'game': {
+    description: 'Luau/Roblox: The global Game object representing the entire game instance.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/DataModel',
+    signature: 'game:GetService("ServiceName")'
+  },
+  'workspace': {
+    description: 'Luau/Roblox: Container for all 3D objects (parts, models) in the game world.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/Workspace',
+  },
+  'Instance': {
+    description: 'Luau/Roblox: Base class for all objects in the Roblox engine.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/Instance',
+    signature: 'Instance.new("ClassName")'
+  },
+  'Part': {
+    description: 'Luau/Roblox: A basic 3D building block (cube, sphere, etc.).',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/BasePart',
+  },
+  'Model': {
+    description: 'Luau/Roblox: A container for grouping multiple parts together.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/Model',
+  },
+  'script': {
+    description: 'Luau/Roblox: Reference to the Script object containing this code.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/Script',
+  },
+  'wait': {
+    description: 'Luau/Roblox: Pauses execution for a specified number of seconds.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/globals/RobloxGlobals',
+    signature: 'wait(seconds)'
+  },
+  'spawn': {
+    description: 'Luau/Roblox: Runs a function in a new thread (coroutine).',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/globals/RobloxGlobals',
+    signature: 'spawn(function)'
+  },
+  'task': {
+    description: 'Luau/Roblox: Library for managing tasks and coroutines.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/libraries/task',
+    signature: 'task.wait(), task.spawn(), task.defer()'
+  },
+  'GetService': {
+    description: 'Luau/Roblox: Returns a service from the game (e.g., Players, ReplicatedStorage).',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/DataModel',
+    signature: 'game:GetService("ServiceName")'
+  },
+  'Players': {
+    description: 'Luau/Roblox: Service that manages all players in the game.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/Players',
+    signature: 'game:GetService("Players")'
+  },
+  'ReplicatedStorage': {
+    description: 'Luau/Roblox: Container shared between server and all clients.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/ReplicatedStorage',
+  },
+  'ServerScriptService': {
+    description: 'Luau/Roblox: Container for scripts that run only on the server.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/ServerScriptService',
+  },
+  'StarterGui': {
+    description: 'Luau/Roblox: Container for UI elements that appear when players join.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/StarterGui',
+  },
+  'LocalScript': {
+    description: 'Luau/Roblox: A script that runs only on the client (player\'s device).',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/LocalScript',
+  },
+  'RemoteEvent': {
+    description: 'Luau/Roblox: Object for communication between client and server.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/RemoteEvent',
+    signature: 'event:FireServer(), event:FireClient()'
+  },
+  'BindableEvent': {
+    description: 'Luau/Roblox: Object for communication between scripts in the same context.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/BindableEvent',
+  },
+  'TweenService': {
+    description: 'Luau/Roblox: Service for creating smooth animations and transitions.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/TweenService',
+    signature: 'TweenService:Create(object, tweenInfo, goal)'
+  },
+  'UserInputService': {
+    description: 'Luau/Roblox: Service for detecting player input (keyboard, mouse, touch).',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/UserInputService',
+  },
+  'RunService': {
+    description: 'Luau/Roblox: Service for running code every frame or at specific intervals.',
+    docUrl: 'https://create.roblox.com/docs/reference/engine/classes/RunService',
+    signature: 'RunService.Heartbeat:Connect(function)'
+  },
+  // C# Unity keywords and classes
+  'MonoBehaviour': {
+    description: 'Unity: Base class for all scripts attached to GameObjects.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/MonoBehaviour.html',
+    signature: 'public class MyScript : MonoBehaviour'
+  },
+  'GameObject': {
+    description: 'Unity: The fundamental object in Unity scenes. Everything is a GameObject.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/GameObject.html',
+    signature: 'GameObject obj = new GameObject("Name")'
+  },
+  'Transform': {
+    description: 'Unity: Component that stores position, rotation, and scale of a GameObject.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Transform.html',
+    signature: 'transform.position, transform.rotation'
+  },
+  'Vector3': {
+    description: 'Unity: Represents a 3D vector (x, y, z). Used for positions, directions, etc.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Vector3.html',
+    signature: 'Vector3(x, y, z)'
+  },
+  'Vector2': {
+    description: 'Unity: Represents a 2D vector (x, y). Used for UI, 2D games, etc.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Vector2.html',
+    signature: 'Vector2(x, y)'
+  },
+  'Quaternion': {
+    description: 'Unity: Represents a rotation in 3D space.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Quaternion.html',
+    signature: 'Quaternion.Euler(x, y, z)'
+  },
+  'Rigidbody': {
+    description: 'Unity: Component that enables physics simulation on a GameObject.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Rigidbody.html',
+    signature: 'rigidbody.velocity, rigidbody.AddForce()'
+  },
+  'Collider': {
+    description: 'Unity: Component that defines the shape for physics collisions.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Collider.html',
+  },
+  'Collider2D': {
+    description: 'Unity: 2D version of Collider for 2D physics.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Collider2D.html',
+  },
+  'Rigidbody2D': {
+    description: 'Unity: 2D version of Rigidbody for 2D physics.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Rigidbody2D.html',
+  },
+  'AudioSource': {
+    description: 'Unity: Component that plays audio clips.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/AudioSource.html',
+    signature: 'audioSource.Play(), audioSource.clip'
+  },
+  'AudioClip': {
+    description: 'Unity: Container for audio data.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/AudioClip.html',
+  },
+  'Camera': {
+    description: 'Unity: Component that renders the scene to the screen.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Camera.html',
+    signature: 'Camera.main'
+  },
+  'Light': {
+    description: 'Unity: Component that emits light in the scene.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Light.html',
+  },
+  'Renderer': {
+    description: 'Unity: Component that renders a GameObject visually.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Renderer.html',
+  },
+  'MeshRenderer': {
+    description: 'Unity: Renders a mesh (3D model) on a GameObject.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/MeshRenderer.html',
+  },
+  'SpriteRenderer': {
+    description: 'Unity: Renders a 2D sprite on a GameObject.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/SpriteRenderer.html',
+  },
+  'Animator': {
+    description: 'Unity: Component that controls animations on a GameObject.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Animator.html',
+    signature: 'animator.SetTrigger(), animator.SetBool()'
+  },
+  'Animation': {
+    description: 'Unity: Legacy animation component (use Animator for new projects).',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Animation.html',
+  },
+  'Input': {
+    description: 'Unity: Class for detecting player input (keyboard, mouse, gamepad).',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Input.html',
+    signature: 'Input.GetKeyDown(), Input.GetMouseButton()'
+  },
+  'Time': {
+    description: 'Unity: Class for accessing time-related information.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Time.html',
+    signature: 'Time.deltaTime, Time.time'
+  },
+  'Debug': {
+    description: 'Unity: Class for logging messages to the console.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Debug.html',
+    signature: 'Debug.Log(), Debug.LogWarning(), Debug.LogError()'
+  },
+  'Start': {
+    description: 'Unity: Called once when the script starts (before first Update).',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/MonoBehaviour.Start.html',
+    signature: 'void Start() { }'
+  },
+  'Update': {
+    description: 'Unity: Called every frame. Use for game logic.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/MonoBehaviour.Update.html',
+    signature: 'void Update() { }'
+  },
+  'FixedUpdate': {
+    description: 'Unity: Called at fixed intervals (for physics). Independent of frame rate.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/MonoBehaviour.FixedUpdate.html',
+    signature: 'void FixedUpdate() { }'
+  },
+  'OnCollisionEnter': {
+    description: 'Unity: Called when this collider/rigidbody touches another.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnCollisionEnter.html',
+    signature: 'void OnCollisionEnter(Collision collision) { }'
+  },
+  'OnTriggerEnter': {
+    description: 'Unity: Called when another collider enters this trigger volume.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/MonoBehaviour.OnTriggerEnter.html',
+    signature: 'void OnTriggerEnter(Collider other) { }'
+  },
+  'GetComponent': {
+    description: 'Unity: Returns a component of a specific type from a GameObject.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html',
+    signature: 'GetComponent<Type>()'
+  },
+  'Instantiate': {
+    description: 'Unity: Creates a copy of an object (prefab, GameObject, etc.).',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Object.Instantiate.html',
+    signature: 'Instantiate(prefab, position, rotation)'
+  },
+  'Destroy': {
+    description: 'Unity: Removes a GameObject or component from the scene.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/Object.Destroy.html',
+    signature: 'Destroy(gameObject, delay)'
+  },
+  'SerializeField': {
+    description: 'Unity: Attribute that makes a private field visible in the Inspector.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/SerializeField.html',
+    signature: '[SerializeField] private int value;'
+  },
+  'HideInInspector': {
+    description: 'Unity: Attribute that hides a public field from the Inspector.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/HideInInspector.html',
+    signature: '[HideInInspector] public int value;'
+  },
+  'RequireComponent': {
+    description: 'Unity: Attribute that automatically adds required components.',
+    docUrl: 'https://docs.unity3d.com/ScriptReference/RequireComponent.html',
+    signature: '[RequireComponent(typeof(Rigidbody))]'
+  },
 };
 
 export function getHoverInfo(word: string): HoverInfo | null {

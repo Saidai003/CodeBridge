@@ -56,6 +56,8 @@ export const translations = {
     languagePhp: "PHP",
     languageSwift: "Swift",
     languageKotlin: "Kotlin",
+    languageLuau: "Luau (Roblox)",
+    languageCSharpUnity: "C# (Unity)",
   },
   es: {
     landingTitle: "CodeBridge",
@@ -112,6 +114,8 @@ export const translations = {
     languagePhp: "PHP",
     languageSwift: "Swift",
     languageKotlin: "Kotlin",
+    languageLuau: "Luau (Roblox)",
+    languageCSharpUnity: "C# (Unity)",
   },
   zh: {
     landingTitle: "CodeBridge",
@@ -168,6 +172,8 @@ export const translations = {
     languagePhp: "PHP",
     languageSwift: "Swift",
     languageKotlin: "Kotlin",
+    languageLuau: "Luau (Roblox)",
+    languageCSharpUnity: "C# (Unity)",
   }
 };
 

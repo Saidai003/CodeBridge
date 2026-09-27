@@ -438,6 +438,8 @@ export default function App() {
                   <option value="php">{t('languagePhp', lang)}</option>
                   <option value="swift">{t('languageSwift', lang)}</option>
                   <option value="kotlin">{t('languageKotlin', lang)}</option>
+                  <option value="luau">{t('languageLuau', lang)}</option>
+                  <option value="csharp-unity">{t('languageCSharpUnity', lang)}</option>
                 </select>
               </div>
 
