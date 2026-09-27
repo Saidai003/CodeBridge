@@ -4,7 +4,7 @@ import {
   BookOpen, Globe, Terminal, Loader2, Check, ExternalLink, Sun, Moon
 } from 'lucide-react';
 import { Language, t } from './i18n';
-import { translatePseudocode, type Mapping, type TranslationResult } from './lib/gemini-client';
+import { translatePseudocode, generateFragmentDetails, type Mapping, type TranslationResult } from './lib/gemini-client';
 import { validateMappings, getColorForIndex, getActiveColorForIndex, getBorderColorForIndex } from './lib/mapping';
 import { executePython, initPyodide } from './lib/pyodide';
 import { Tutorial } from './components/Tutorial';
@@ -55,6 +55,9 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [hoveredMapping, setHoveredMapping] = useState<string | null>(null);
   const [targetLanguage, setTargetLanguage] = useState(() => localStorage.getItem('codebridge_target_lang') || 'python');
+  const [expandedFragment, setExpandedFragment] = useState<string | null>(null);
+  const [fragmentDetails, setFragmentDetails] = useState<Record<string, string>>({});
+  const [loadingFragment, setLoadingFragment] = useState<string | null>(null);
 
   const studioRef = useRef<HTMLDivElement>(null);
   const pseudoTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -142,6 +145,65 @@ export default function App() {
   const handleTutorialSkip = () => {
     setShowTutorial(false);
     localStorage.setItem('codebridge_tutorial_seen', 'true');
+  };
+
+  const handleFragmentClick = async (mappingId: string) => {
+    // Si ya está expandido, colapsarlo
+    if (expandedFragment === mappingId) {
+      setExpandedFragment(null);
+      return;
+    }
+
+    // Si ya tenemos los detalles, solo expandir
+    if (fragmentDetails[mappingId]) {
+      setExpandedFragment(mappingId);
+      return;
+    }
+
+    // Si no tenemos API key, no podemos generar detalles
+    if (!apiKey) {
+      setShowApiKeyInput(true);
+      return;
+    }
+
+    // Buscar el mapping
+    const mapping = mappings.find(m => m.id === mappingId);
+    if (!mapping) return;
+
+    setLoadingFragment(mappingId);
+    setExpandedFragment(mappingId);
+
+    try {
+      // Extraer el fragmento de pseudo-código y código
+      const pseudoLines = pseudocode.split('\n');
+      const codeLines = generatedCode.split('\n');
+      
+      const fragmentPseudocode = pseudoLines
+        .slice(mapping.pseudocode_lines[0] - 1, mapping.pseudocode_lines[1])
+        .join('\n');
+      
+      const fragmentCode = codeLines
+        .slice(mapping.code_lines[0] - 1, mapping.code_lines[1])
+        .join('\n');
+
+      const details = await generateFragmentDetails(
+        apiKey,
+        pseudocode,
+        generatedCode,
+        mapping.label || `Fragment ${mappingId}`,
+        fragmentPseudocode,
+        fragmentCode
+      );
+
+      setFragmentDetails(prev => ({ ...prev, [mappingId]: details }));
+    } catch (err: any) {
+      setFragmentDetails(prev => ({ 
+        ...prev, 
+        [mappingId]: `Error: ${err.message}` 
+      }));
+    } finally {
+      setLoadingFragment(null);
+    }
   };
 
   // Render pseudo-code lines with mapping colors
@@ -452,11 +514,6 @@ export default function App() {
               <div className="px-4 py-2 bg-gray-50 dark:bg-gray-750 border-b border-gray-200 dark:border-gray-700 flex items-center gap-2">
                 <Terminal size={14} className="text-green-500" />
                 <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{t('codeLabel', lang)}</span>
-                {generatedCode && (
-                  <span className="ml-auto text-xs text-gray-400">
-                    {lang === 'es' ? 'Pasá el mouse para explicaciones' : lang === 'zh' ? '悬停查看解释' : 'Hover for explanations'}
-                  </span>
-                )}
               </div>
               <div className="h-[400px] overflow-auto">
                 {generatedCode ? (
@@ -511,16 +568,20 @@ export default function App() {
           {mappings.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow border border-gray-200 dark:border-gray-700 p-4 mb-4">
               <h4 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-3">
-                {lang === 'es' ? 'Mapeo de fragmentos' : lang === 'zh' ? '片段映射' : 'Fragment Mapping'}
+                {t('fragmentMappingTitle', lang)}
               </h4>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3 mb-3">
                 {mappings.map((m, i) => (
                   <div
                     key={m.id}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm cursor-pointer transition-all hover:scale-105"
+                    onClick={() => handleFragmentClick(m.id)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm cursor-pointer transition-all hover:scale-105 ${
+                      expandedFragment === m.id ? 'ring-2 ring-blue-500' : ''
+                    }`}
                     style={{ backgroundColor: getColorForIndex(i) }}
                     onMouseEnter={() => setHoveredMapping(m.id)}
                     onMouseLeave={() => setHoveredMapping(null)}
+                    title={t('fragmentDetails', lang)}
                   >
                     <div
                       className="w-3 h-3 rounded-full"
@@ -532,6 +593,24 @@ export default function App() {
                   </div>
                 ))}
               </div>
+              
+              {/* Expanded Fragment Details */}
+              {expandedFragment && (
+                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                  {loadingFragment === expandedFragment ? (
+                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                      <Loader2 size={16} className="animate-spin" />
+                      <span className="text-sm">{t('loadingDetails', lang)}</span>
+                    </div>
+                  ) : fragmentDetails[expandedFragment] ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                        {fragmentDetails[expandedFragment]}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </div>
           )}
 

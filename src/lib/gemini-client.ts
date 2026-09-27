@@ -132,3 +132,56 @@ Rules:
   const data = await response.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
 }
+
+export async function generateFragmentDetails(
+  apiKey: string,
+  pseudocode: string,
+  generatedCode: string,
+  fragmentLabel: string,
+  fragmentPseudocode: string,
+  fragmentCode: string
+): Promise<string> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+
+  const prompt = `You are a code explanation assistant. Explain the following code fragment in detail.
+
+FRAGMENT: "${fragmentLabel}"
+
+PSEUDO-CODE:
+${fragmentPseudocode}
+
+GENERATED CODE:
+${fragmentCode}
+
+FULL CONTEXT:
+--- Complete Pseudo-code ---
+${pseudocode}
+--- Complete Generated Code ---
+${generatedCode}
+---
+
+Provide a detailed explanation covering:
+1. What this fragment does (its purpose)
+2. Why it exists (its role in the overall program)
+3. How it works (brief technical explanation)
+4. Key concepts or patterns used
+
+Be educational, clear, and concise. Explain as if teaching someone learning to code.
+Respond in the same language as the pseudo-code.`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.3 }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
+}

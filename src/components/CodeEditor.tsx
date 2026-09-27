@@ -1,7 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createHighlighter, type BundledLanguage, type BundledTheme, type HighlighterGeneric } from 'shiki';
-import { computePosition, flip, shift, offset } from '@floating-ui/dom';
-import { getHoverInfo, type HoverInfo } from '../lib/hover-data';
 import { getColorForIndex, getBorderColorForIndex, getActiveColorForIndex } from '../lib/mapping';
 import type { Mapping } from '../lib/gemini-client';
 
@@ -31,13 +29,6 @@ const languageMap: Record<string, BundledLanguage> = {
   'csharp-unity': 'csharp',
 };
 
-interface TooltipData {
-  word: string;
-  info: HoverInfo;
-  x: number;
-  y: number;
-}
-
 export const CodeEditor: React.FC<CodeEditorProps> = ({ 
   code, 
   language, 
@@ -47,9 +38,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   theme = 'dark'
 }) => {
   const codeContainerRef = useRef<HTMLDivElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
   const [highlighter, setHighlighter] = useState<HighlighterGeneric<BundledLanguage, BundledTheme> | null>(null);
-  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
   // Inicializar Shiki una sola vez
   useEffect(() => {
@@ -143,7 +132,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     });
   }, [hoveredMapping, mappings]);
 
-  // Event delegation para hover (mucho más eficiente)
+  // Event delegation para hover de mappings
   useEffect(() => {
     if (!codeContainerRef.current) return;
 
@@ -160,22 +149,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           onMappingHover?.(mappings[mappingIdx].id);
         }
       }
-      
-      // Hover para tooltips en tokens
-      if (target.tagName === 'SPAN' && target.closest('.shiki')) {
-        const text = target.textContent || '';
-        const hoverInfo = getHoverInfo(text);
-        
-        if (hoverInfo) {
-          const rect = target.getBoundingClientRect();
-          setTooltip({
-            word: text,
-            info: hoverInfo,
-            x: rect.left + rect.width / 2,
-            y: rect.top,
-          });
-        }
-      }
     };
 
     const handleMouseOut = (e: MouseEvent) => {
@@ -186,9 +159,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       if (!target.contains(relatedTarget)) {
         if (target.closest('.code-line')) {
           onMappingHover?.(null);
-        }
-        if (target.tagName === 'SPAN' && target.closest('.shiki')) {
-          setTooltip(null);
         }
       }
     };
@@ -202,32 +172,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     };
   }, [mappings, onMappingHover]);
 
-  // Posicionar tooltip con Floating UI
-  useEffect(() => {
-    if (!tooltip || !tooltipRef.current) return;
-
-    const virtualElement = {
-      getBoundingClientRect: () => ({
-        width: 0,
-        height: 0,
-        top: tooltip.y,
-        left: tooltip.x,
-        right: tooltip.x,
-        bottom: tooltip.y,
-      }),
-    };
-
-    computePosition(virtualElement as any, tooltipRef.current, {
-      placement: 'top',
-      middleware: [offset(10), flip(), shift()],
-    }).then(({ x, y }) => {
-      if (tooltipRef.current) {
-        tooltipRef.current.style.left = `${x}px`;
-        tooltipRef.current.style.top = `${y}px`;
-      }
-    });
-  }, [tooltip]);
-
   return (
     <div className="relative">
       <div
@@ -240,33 +184,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
           minHeight: '400px',
         }}
       />
-      
-      {tooltip && (
-        <div
-          ref={tooltipRef}
-          className="fixed z-50 bg-gray-900 text-white rounded-lg shadow-xl p-3 max-w-xs text-sm pointer-events-none border border-gray-700"
-          style={{
-            transform: 'translateX(-50%)',
-          }}
-        >
-          <div className="font-bold text-blue-300 mb-1">{tooltip.word}</div>
-          {tooltip.info.signature && (
-            <code className="text-xs text-green-300 block mb-1">{tooltip.info.signature}</code>
-          )}
-          <p className="text-gray-300">{tooltip.info.description}</p>
-          <a
-            href={tooltip.info.docUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 text-xs mt-1 inline-flex items-center gap-1 hover:underline"
-          >
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            Docs
-          </a>
-        </div>
-      )}
     </div>
   );
 };
