@@ -51,34 +51,50 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   const [highlighter, setHighlighter] = useState<HighlighterGeneric<BundledLanguage, BundledTheme> | null>(null);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
-  // Inicializar Shiki
+  // Inicializar Shiki una sola vez
   useEffect(() => {
+    let hl: HighlighterGeneric<BundledLanguage, BundledTheme> | null = null;
+    
     const initHighlighter = async () => {
-      const hl = await createHighlighter({
+      hl = await createHighlighter({
         themes: ['github-dark', 'github-light'],
         langs: Object.values(languageMap),
       });
       setHighlighter(hl);
     };
+    
     initHighlighter();
 
     return () => {
-      highlighter?.dispose();
+      hl?.dispose();
     };
   }, []);
 
-  // Renderizar código con Shiki, mappings y hover
+  // Renderizar código con Shiki (solo cuando cambie el código, lenguaje o tema)
   useEffect(() => {
-    if (!highlighter || !codeContainerRef.current) return;
+    if (!codeContainerRef.current) return;
 
     const shikiLang = languageMap[language] || 'text';
     const lines = code.split('\n');
     
+    // Si Shiki no está listo, mostrar código sin highlighting
+    if (!highlighter) {
+      const bgColor = theme === 'dark' ? '#24292e' : '#ffffff';
+      const textColor = theme === 'dark' ? '#e1e4e8' : '#24292e';
+      let html = `<pre style="padding:16px;background:${bgColor};color:${textColor};margin:0"><code>`;
+      lines.forEach((line, idx) => {
+        html += `<div style="padding:2px 8px">${line || ' '}</div>`;
+      });
+      html += '</code></pre>';
+      codeContainerRef.current.innerHTML = html;
+      return;
+    }
+
     // Crear HTML con mappings
     const shikiTheme = theme === 'dark' ? 'github-dark' : 'github-light';
     const bgColor = theme === 'dark' ? '#24292e' : '#ffffff';
     const textColor = theme === 'dark' ? '#e1e4e8' : '#24292e';
-    let html = `<pre class="shiki ${shikiTheme}" style="background-color:${bgColor};color:${textColor}"><code>`;
+    let html = `<pre class="shiki ${shikiTheme}" style="background-color:${bgColor};color:${textColor};padding:0;margin:0"><code>`;
     
     lines.forEach((line, idx) => {
       const lineNum = idx + 1;
@@ -87,7 +103,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       );
       
       const isFirstLineOfMapping = mappingIndex >= 0 && lineNum === mappings[mappingIndex].code_lines[0];
-      const isHovered = mappingIndex >= 0 && hoveredMapping === mappings[mappingIndex]?.id;
       
       // Agregar label arriba si es la primera línea
       if (isFirstLineOfMapping && mappings[mappingIndex]?.label) {
@@ -95,14 +110,10 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         html += `<div style="padding:2px 8px;font-size:11px;font-weight:600;color:${labelColor};background:${getColorForIndex(mappingIndex)}">← ${mappings[mappingIndex].label}</div>`;
       }
       
-      // Background color para la línea
-      const bgColor = mappingIndex >= 0 ? (isHovered ? getActiveColorForIndex(mappingIndex) : getColorForIndex(mappingIndex)) : 'transparent';
-      
-      html += `<div class="code-line" data-line="${lineNum}" data-mapping="${mappingIndex}" style="background:${bgColor};padding:2px 8px;transition:background 0.15s">`;
+      html += `<div class="code-line" data-line="${lineNum}" data-mapping="${mappingIndex}" style="padding:2px 8px;transition:background 0.15s">`;
       
       // Resaltar la línea con Shiki
       const lineHtml = highlighter.codeToHtml(line, { lang: shikiLang, theme: shikiTheme });
-      // Extraer solo el contenido del <code>
       const codeMatch = lineHtml.match(/<code[^>]*>([\s\S]*?)<\/code>/);
       html += codeMatch ? codeMatch[1] : line;
       
@@ -111,21 +122,52 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     
     html += '</code></pre>';
     codeContainerRef.current.innerHTML = html;
+  }, [code, language, highlighter, theme, mappings]);
 
-    // Agregar event listeners para hover en tokens y mappings
-    const cleanupFunctions: (() => void)[] = [];
+  // Actualizar solo los estilos cuando cambie hoveredMapping (sin re-renderizar todo)
+  useEffect(() => {
+    if (!codeContainerRef.current) return;
 
-    // Hover para tooltips en tokens
-    const tokens = codeContainerRef.current.querySelectorAll('.shiki span');
-    tokens.forEach((token) => {
-      const htmlToken = token as HTMLElement;
+    const codeLines = codeContainerRef.current.querySelectorAll('.code-line');
+    codeLines.forEach((lineEl) => {
+      const htmlLine = lineEl as HTMLElement;
+      const mappingIdx = parseInt(htmlLine.dataset.mapping || '-1');
       
-      const handleMouseEnter = () => {
-        const text = htmlToken.textContent || '';
+      if (mappingIdx >= 0 && mappings[mappingIdx]) {
+        const isHovered = hoveredMapping === mappings[mappingIdx].id;
+        const lineBgColor = isHovered ? getActiveColorForIndex(mappingIdx) : getColorForIndex(mappingIdx);
+        htmlLine.style.background = lineBgColor;
+      } else {
+        htmlLine.style.background = 'transparent';
+      }
+    });
+  }, [hoveredMapping, mappings]);
+
+  // Event delegation para hover (mucho más eficiente)
+  useEffect(() => {
+    if (!codeContainerRef.current) return;
+
+    const container = codeContainerRef.current;
+
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Hover para mappings
+      const codeLine = target.closest('.code-line');
+      if (codeLine) {
+        const mappingIdx = parseInt((codeLine as HTMLElement).dataset.mapping || '-1');
+        if (mappingIdx >= 0 && mappings[mappingIdx]) {
+          onMappingHover?.(mappings[mappingIdx].id);
+        }
+      }
+      
+      // Hover para tooltips en tokens
+      if (target.tagName === 'SPAN' && target.closest('.shiki')) {
+        const text = target.textContent || '';
         const hoverInfo = getHoverInfo(text);
         
         if (hoverInfo) {
-          const rect = htmlToken.getBoundingClientRect();
+          const rect = target.getBoundingClientRect();
           setTooltip({
             word: text,
             info: hoverInfo,
@@ -133,50 +175,32 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             y: rect.top,
           });
         }
-      };
-
-      const handleMouseLeave = () => {
-        setTooltip(null);
-      };
-
-      htmlToken.addEventListener('mouseenter', handleMouseEnter);
-      htmlToken.addEventListener('mouseleave', handleMouseLeave);
-
-      cleanupFunctions.push(() => {
-        htmlToken.removeEventListener('mouseenter', handleMouseEnter);
-        htmlToken.removeEventListener('mouseleave', handleMouseLeave);
-      });
-    });
-
-    // Hover para mappings
-    const codeLines = codeContainerRef.current.querySelectorAll('.code-line');
-    codeLines.forEach((lineEl) => {
-      const htmlLine = lineEl as HTMLElement;
-      const mappingIdx = parseInt(htmlLine.dataset.mapping || '-1');
-      
-      if (mappingIdx >= 0 && mappings[mappingIdx]) {
-        const handleMouseEnter = () => {
-          onMappingHover?.(mappings[mappingIdx].id);
-        };
-        
-        const handleMouseLeave = () => {
-          onMappingHover?.(null);
-        };
-        
-        htmlLine.addEventListener('mouseenter', handleMouseEnter);
-        htmlLine.addEventListener('mouseleave', handleMouseLeave);
-        
-        cleanupFunctions.push(() => {
-          htmlLine.removeEventListener('mouseenter', handleMouseEnter);
-          htmlLine.removeEventListener('mouseleave', handleMouseLeave);
-        });
       }
-    });
+    };
+
+    const handleMouseOut = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const relatedTarget = e.relatedTarget as HTMLElement;
+      
+      // Solo limpiar si realmente salimos del elemento
+      if (!target.contains(relatedTarget)) {
+        if (target.closest('.code-line')) {
+          onMappingHover?.(null);
+        }
+        if (target.tagName === 'SPAN' && target.closest('.shiki')) {
+          setTooltip(null);
+        }
+      }
+    };
+
+    container.addEventListener('mouseover', handleMouseOver);
+    container.addEventListener('mouseout', handleMouseOut);
 
     return () => {
-      cleanupFunctions.forEach(fn => fn());
+      container.removeEventListener('mouseover', handleMouseOver);
+      container.removeEventListener('mouseout', handleMouseOut);
     };
-  }, [code, language, highlighter, mappings, hoveredMapping, theme]);
+  }, [mappings, onMappingHover]);
 
   // Posicionar tooltip con Floating UI
   useEffect(() => {
