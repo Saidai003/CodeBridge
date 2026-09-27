@@ -11,6 +11,7 @@ interface CodeEditorProps {
   mappings?: Mapping[];
   hoveredMapping?: string | null;
   onMappingHover?: (mappingId: string | null) => void;
+  theme?: 'light' | 'dark';
 }
 
 // Mapeo de lenguajes personalizados a lenguajes de Shiki
@@ -42,7 +43,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   language, 
   mappings = [],
   hoveredMapping,
-  onMappingHover 
+  onMappingHover,
+  theme = 'dark'
 }) => {
   const codeContainerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -53,7 +55,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   useEffect(() => {
     const initHighlighter = async () => {
       const hl = await createHighlighter({
-        themes: ['github-dark'],
+        themes: ['github-dark', 'github-light'],
         langs: Object.values(languageMap),
       });
       setHighlighter(hl);
@@ -73,7 +75,10 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     const lines = code.split('\n');
     
     // Crear HTML con mappings
-    let html = '<pre class="shiki github-dark" style="background-color:#24292e;color:#e1e4e8"><code>';
+    const shikiTheme = theme === 'dark' ? 'github-dark' : 'github-light';
+    const bgColor = theme === 'dark' ? '#24292e' : '#ffffff';
+    const textColor = theme === 'dark' ? '#e1e4e8' : '#24292e';
+    let html = `<pre class="shiki ${shikiTheme}" style="background-color:${bgColor};color:${textColor}"><code>`;
     
     lines.forEach((line, idx) => {
       const lineNum = idx + 1;
@@ -96,7 +101,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       html += `<div class="code-line" data-line="${lineNum}" data-mapping="${mappingIndex}" style="background:${bgColor};padding:2px 8px;transition:background 0.15s">`;
       
       // Resaltar la línea con Shiki
-      const lineHtml = highlighter.codeToHtml(line, { lang: shikiLang, theme: 'github-dark' });
+      const lineHtml = highlighter.codeToHtml(line, { lang: shikiLang, theme: shikiTheme });
       // Extraer solo el contenido del <code>
       const codeMatch = lineHtml.match(/<code[^>]*>([\s\S]*?)<\/code>/);
       html += codeMatch ? codeMatch[1] : line;
@@ -171,7 +176,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     return () => {
       cleanupFunctions.forEach(fn => fn());
     };
-  }, [code, language, highlighter, mappings, hoveredMapping]);
+  }, [code, language, highlighter, mappings, hoveredMapping, theme]);
 
   // Posicionar tooltip con Floating UI
   useEffect(() => {
