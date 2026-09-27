@@ -62,13 +62,7 @@ export default function App() {
     localStorage.setItem('codebridge_apikey', apiKey);
   }, [apiKey]);
 
-  // Check tutorial
-  useEffect(() => {
-    const seen = localStorage.getItem('codebridge_tutorial_seen');
-    if (!seen) {
-      setShowTutorial(true);
-    }
-  }, []);
+
 
   // Init Pyodide
   useEffect(() => {
@@ -174,6 +168,9 @@ export default function App() {
       const bgColor = mappingIndex >= 0 ? getColorForIndex(mappingIndex) : 'transparent';
       const isHovered = mappingIndex >= 0 && hoveredMapping === lineMappings[mappingIndex]?.id;
       const hoverBg = isHovered && mappingIndex >= 0 ? getActiveColorForIndex(mappingIndex) : bgColor;
+      
+      // Only show label on the first line of the mapping
+      const isFirstLineOfMapping = mappingIndex >= 0 && lineNum === (side === 'pseudo' ? lineMappings[mappingIndex].pseudocode_lines[0] : lineMappings[mappingIndex].code_lines[0]);
 
       return (
         <div
@@ -186,7 +183,7 @@ export default function App() {
           onMouseLeave={() => setHoveredMapping(null)}
         >
           <span className="text-gray-800 dark:text-gray-200 font-mono text-sm whitespace-pre-wrap">{line || ' '}</span>
-          {isHovered && lineMappings[mappingIndex]?.label && (
+          {isHovered && isFirstLineOfMapping && lineMappings[mappingIndex]?.label && (
             <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 italic">
               ← {lineMappings[mappingIndex].label}
             </span>
@@ -330,6 +327,18 @@ export default function App() {
               {t('studioTitle', lang)}
             </h2>
             <div className="flex flex-wrap items-center gap-3">
+              {/* Tutorial Button */}
+              <button
+                onClick={() => {
+                  setTutorialStep(0);
+                  setShowTutorial(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded-lg text-sm font-medium transition-colors"
+              >
+                <BookOpen size={14} />
+                {t('tutorialButton', lang)}
+              </button>
+
               {/* API Key */}
               <div className="relative">
                 <button
