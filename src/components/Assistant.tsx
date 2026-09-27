@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, MessageCircle, X, Bot, User } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { Language, t } from '../i18n';
 import { askAssistant } from '../lib/gemini-client';
 
@@ -104,9 +105,32 @@ export const Assistant: React.FC<AssistantProps> = ({
                     msg.role === 'user'
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
-                  }`}
+                  } markdown-content`}
                 >
-                  {msg.text}
+                  {msg.role === 'assistant' ? (
+                    <ReactMarkdown
+                      components={{
+                        p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
+                        strong: ({children}) => <strong className="font-bold">{children}</strong>,
+                        em: ({children}) => <em className="italic">{children}</em>,
+                        code: ({children, className}) => {
+                          const isInline = !className;
+                          return isInline ? (
+                            <code className="bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 rounded text-xs font-mono">{children}</code>
+                          ) : (
+                            <code className={`${className} block bg-gray-900 text-green-400 p-3 rounded my-2 text-xs font-mono overflow-x-auto`}>{children}</code>
+                          );
+                        },
+                        ul: ({children}) => <ul className="list-disc list-inside my-2 space-y-1">{children}</ul>,
+                        ol: ({children}) => <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>,
+                        li: ({children}) => <li>{children}</li>,
+                      }}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
+                  ) : (
+                    msg.text
+                  )}
                 </div>
                 {msg.role === 'user' && (
                   <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
