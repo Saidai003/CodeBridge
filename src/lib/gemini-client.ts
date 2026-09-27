@@ -12,15 +12,16 @@ export interface TranslationResult {
 
 export async function translatePseudocode(
   apiKey: string,
-  pseudocode: string
+  pseudocode: string,
+  targetLanguage: string = 'python'
 ): Promise<TranslationResult> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
 
-  const prompt = `You are a code translation assistant. Convert the following pseudo-code into valid Python code.
+  const prompt = `You are a code translation assistant. Convert the following pseudo-code into valid ${targetLanguage} code.
 
 IMPORTANT: Return ONLY a JSON object with this exact structure (no markdown, no explanation):
 {
-  "generated_code": "string (valid Python code)",
+  "generated_code": "string (valid ${targetLanguage} code)",
   "mappings": [
     {
       "id": "fragment_1",
@@ -37,6 +38,7 @@ Rules:
 - Mappings must not overlap
 - Include all lines in mappings
 - Labels should be brief (2-5 words)
+- Generate clean, idiomatic ${targetLanguage} code
 
 Pseudo-code to translate:
 ${pseudocode}`;

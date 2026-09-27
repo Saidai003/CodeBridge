@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { Language, t } from './i18n';
 import { translatePseudocode, type Mapping, type TranslationResult } from './lib/gemini-client';
-import { validateMappings, getColorForIndex, getActiveColorForIndex } from './lib/mapping';
+import { validateMappings, getColorForIndex, getActiveColorForIndex, getBorderColorForIndex } from './lib/mapping';
 import { getHoverInfo } from './lib/hover-data';
 import { executePython, initPyodide } from './lib/pyodide';
 import { Tutorial } from './components/Tutorial';
@@ -50,6 +50,7 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [hoveredMapping, setHoveredMapping] = useState<string | null>(null);
   const [hoverInfo, setHoverInfo] = useState<{ word: string; info: any; x: number; y: number } | null>(null);
+  const [targetLanguage, setTargetLanguage] = useState(() => localStorage.getItem('codebridge_target_lang') || 'python');
 
   const studioRef = useRef<HTMLDivElement>(null);
   const pseudoTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -78,6 +79,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('codebridge_apikey', apiKey);
   }, [apiKey]);
+
+  useEffect(() => {
+    localStorage.setItem('codebridge_target_lang', targetLanguage);
+  }, [targetLanguage]);
 
 
 
@@ -108,7 +113,7 @@ export default function App() {
 
     setIsGenerating(true);
     try {
-      const result: TranslationResult = await translatePseudocode(apiKey, pseudocode);
+      const result: TranslationResult = await translatePseudocode(apiKey, pseudocode, targetLanguage);
       const pseudoLines = pseudocode.split('\n').length;
       const codeLines = result.generated_code.split('\n').length;
       const validMappings = validateMappings(result.mappings || [], pseudoLines, codeLines);
@@ -160,22 +165,31 @@ export default function App() {
   // Handle hover on code editor
   const handleCodeEditorHover = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
-    const token = target.closest('.mtk1, .mtk6, .mtk11, .mtk22, span');
-    if (token) {
-      const word = token.textContent?.trim() || '';
+    
+    // Get the text content of the hovered element
+    const text = target.textContent?.trim() || '';
+    
+    // Try to find a word that matches our hover data
+    // Split by common delimiters and check each word
+    const words = text.split(/[\s\(\)\{\}\[\],;:=<>+\-*/&|!?.]+/).filter(w => w.length > 0);
+    
+    for (const word of words) {
       const info = getHoverInfo(word);
       if (info) {
         setHoverInfo({ word, info, x: e.clientX, y: e.clientY });
         return;
       }
     }
+    
     setHoverInfo(null);
   }, []);
 
   // Render line with mapping colors
   const renderColoredLines = (text: string, lineMappings: Mapping[], side: 'pseudo' | 'code') => {
     const lines = text.split('\n');
-    return lines.map((line, idx) => {
+    const elements: React.ReactNode[] = [];
+
+    lines.forEach((line, idx) => {
       const lineNum = idx + 1;
       const mappingIndex = lineMappings.findIndex(m => {
         const range = side === 'pseudo' ? m.pseudocode_lines : m.code_lines;
@@ -186,10 +200,27 @@ export default function App() {
       const isHovered = mappingIndex >= 0 && hoveredMapping === lineMappings[mappingIndex]?.id;
       const hoverBg = isHovered && mappingIndex >= 0 ? getActiveColorForIndex(mappingIndex) : bgColor;
       
-      // Only show label on the first line of the mapping
+      // Check if this is the first line of a mapping
       const isFirstLineOfMapping = mappingIndex >= 0 && lineNum === (side === 'pseudo' ? lineMappings[mappingIndex].pseudocode_lines[0] : lineMappings[mappingIndex].code_lines[0]);
 
-      return (
+      // If it's the first line and has a label, add the label above
+      if (isFirstLineOfMapping && lineMappings[mappingIndex]?.label) {
+        elements.push(
+          <div
+            key={`label-${idx}`}
+            className="px-3 py-0.5 text-xs font-semibold transition-colors duration-150"
+            style={{ backgroundColor: bgColor, color: getBorderColorForIndex(mappingIndex) }}
+            onMouseEnter={() => {
+              if (mappingIndex >= 0) setHoveredMapping(lineMappings[mappingIndex].id);
+            }}
+            onMouseLeave={() => setHoveredMapping(null)}
+          >
+            ← {lineMappings[mappingIndex].label}
+          </div>
+        );
+      }
+
+      elements.push(
         <div
           key={idx}
           className={`px-3 py-0.5 transition-colors duration-150 cursor-pointer ${isHovered ? 'ring-1 ring-inset ring-blue-400/30' : ''}`}
@@ -200,14 +231,11 @@ export default function App() {
           onMouseLeave={() => setHoveredMapping(null)}
         >
           <span className="text-gray-800 dark:text-gray-200 font-mono text-sm whitespace-pre-wrap">{line || ' '}</span>
-          {isHovered && isFirstLineOfMapping && lineMappings[mappingIndex]?.label && (
-            <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 italic">
-              ← {lineMappings[mappingIndex].label}
-            </span>
-          )}
         </div>
       );
     });
+
+    return elements;
   };
 
   // Language selector
@@ -390,6 +418,27 @@ export default function App() {
                     </a>
                   </div>
                 )}
+              </div>
+
+              {/* Target Language Selector */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={targetLanguage}
+                  onChange={(e) => setTargetLanguage(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="python">{t('languagePython', lang)}</option>
+                  <option value="javascript">{t('languageJavaScript', lang)}</option>
+                  <option value="typescript">{t('languageTypeScript', lang)}</option>
+                  <option value="java">{t('languageJava', lang)}</option>
+                  <option value="cpp">{t('languageCpp', lang)}</option>
+                  <option value="csharp">{t('languageCsharp', lang)}</option>
+                  <option value="go">{t('languageGo', lang)}</option>
+                  <option value="ruby">{t('languageRuby', lang)}</option>
+                  <option value="php">{t('languagePhp', lang)}</option>
+                  <option value="swift">{t('languageSwift', lang)}</option>
+                  <option value="kotlin">{t('languageKotlin', lang)}</option>
+                </select>
               </div>
 
               {/* Actions */}

@@ -180,6 +180,185 @@ export const pythonKeywords: Record<string, HoverInfo> = {
     docUrl: 'https://docs.python.org/3/library/functions.html#filter',
     signature: 'filter(function, iterable) -> filter'
   },
+  // JavaScript/TypeScript keywords
+  'const': {
+    description: 'Declares a block-scoped constant. The value cannot be reassigned.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/const',
+    signature: 'const name = value'
+  },
+  'let': {
+    description: 'Declares a block-scoped variable that can be reassigned.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let',
+    signature: 'let name = value'
+  },
+  'var': {
+    description: 'Declares a function-scoped or globally-scoped variable.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/var',
+    signature: 'var name = value'
+  },
+  'function': {
+    description: 'Declares a function with the specified parameters.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function',
+    signature: 'function name(params) { body }'
+  },
+  'async': {
+    description: 'Declares an asynchronous function that returns a Promise.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function',
+    signature: 'async function name(params) { body }'
+  },
+  'await': {
+    description: 'Pauses async function execution until a Promise settles.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await',
+    signature: 'await promise'
+  },
+  '=>': {
+    description: 'Arrow function expression. Shorter syntax for function expressions.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions',
+    signature: '(params) => expression'
+  },
+  'console': {
+    description: 'Provides access to the browser debugging console.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/API/console',
+    signature: 'console.log(), console.error(), etc.'
+  },
+  'document': {
+    description: 'Represents the HTML document loaded in the browser.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/API/Document',
+  },
+  'window': {
+    description: 'Represents the browser window containing the DOM document.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/API/Window',
+  },
+  'Array': {
+    description: 'Global object used to construct arrays (ordered, indexed collections).',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array',
+    signature: 'new Array() or []'
+  },
+  'Object': {
+    description: 'Global object for storing key-value pairs.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object',
+    signature: 'new Object() or {}'
+  },
+  'Promise': {
+    description: 'Represents the eventual completion of an asynchronous operation.',
+    docUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise',
+    signature: 'new Promise((resolve, reject) => {})'
+  },
+  'interface': {
+    description: 'TypeScript: Defines the shape of an object (type contract).',
+    docUrl: 'https://www.typescriptlang.org/docs/handbook/2/objects.html',
+    signature: 'interface Name { prop: type }'
+  },
+  'type': {
+    description: 'TypeScript: Creates a type alias.',
+    docUrl: 'https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#type-aliases',
+    signature: 'type Name = Type'
+  },
+  // Java keywords
+  'public': {
+    description: 'Access modifier: visible to all classes.',
+    docUrl: 'https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html',
+  },
+  'private': {
+    description: 'Access modifier: visible only within the declaring class.',
+    docUrl: 'https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html',
+  },
+  'protected': {
+    description: 'Access modifier: visible within the package and subclasses.',
+    docUrl: 'https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html',
+  },
+  'static': {
+    description: 'Belongs to the class rather than instances of the class.',
+    docUrl: 'https://docs.oracle.com/javase/tutorial/java/javaOO/classvars.html',
+  },
+  'void': {
+    description: 'Indicates that a method does not return any value.',
+    docUrl: 'https://docs.oracle.com/javase/specs/jls/se8/html/jls-8.html#jls-8.4.5',
+  },
+  'new': {
+    description: 'Creates a new instance of a class.',
+    docUrl: 'https://docs.oracle.com/javase/tutorial/java/javaOO/objectcreation.html',
+    signature: 'new ClassName(args)'
+  },
+  'this': {
+    description: 'Reference to the current object instance.',
+    docUrl: 'https://docs.oracle.com/javase/tutorial/java/javaOO/thiskey.html',
+  },
+  'extends': {
+    description: 'Indicates that a class inherits from another class.',
+    docUrl: 'https://docs.oracle.com/javase/tutorial/java/IandI/subclasses.html',
+    signature: 'class Child extends Parent'
+  },
+  'implements': {
+    description: 'Indicates that a class implements an interface.',
+    docUrl: 'https://docs.oracle.com/javase/tutorial/java/IandI/createinterface.html',
+    signature: 'class Name implements Interface'
+  },
+  // C/C++ keywords
+  'include': {
+    description: 'Preprocessor directive to include header files.',
+    docUrl: 'https://en.cppreference.com/w/cpp/preprocessor/include',
+    signature: '#include <header>'
+  },
+  'namespace': {
+    description: 'C++: Declares a named scope to organize code.',
+    docUrl: 'https://en.cppreference.com/w/cpp/language/namespace',
+    signature: 'namespace Name { }'
+  },
+  'std': {
+    description: 'C++: The standard namespace containing standard library components.',
+    docUrl: 'https://en.cppreference.com/w/cpp/namespace/std',
+  },
+  'cout': {
+    description: 'C++: Standard output stream object.',
+    docUrl: 'https://en.cppreference.com/w/cpp/io/cout',
+    signature: 'std::cout << value'
+  },
+  'cin': {
+    description: 'C++: Standard input stream object.',
+    docUrl: 'https://en.cppreference.com/w/cpp/io/cin',
+    signature: 'std::cin >> variable'
+  },
+  'nullptr': {
+    description: 'C++: Pointer literal representing a null pointer.',
+    docUrl: 'https://en.cppreference.com/w/cpp/language/nullptr',
+  },
+  'sizeof': {
+    description: 'Returns the size in bytes of a type or variable.',
+    docUrl: 'https://en.cppreference.com/w/cpp/language/sizeof',
+    signature: 'sizeof(type)'
+  },
+  // Common functions across languages
+  'main': {
+    description: 'The entry point of a program where execution begins.',
+    docUrl: 'https://en.wikipedia.org/wiki/Main_function',
+    signature: 'int main() { }'
+  },
+  'useState': {
+    description: 'React Hook: Adds state to functional components.',
+    docUrl: 'https://react.dev/reference/react/useState',
+    signature: 'const [state, setState] = useState(initialValue)'
+  },
+  'useEffect': {
+    description: 'React Hook: Synchronizes a component with external systems.',
+    docUrl: 'https://react.dev/reference/react/useEffect',
+    signature: 'useEffect(() => { }, [deps])'
+  },
+  'useRef': {
+    description: 'React Hook: Returns a mutable ref object that persists across renders.',
+    docUrl: 'https://react.dev/reference/react/useRef',
+    signature: 'const ref = useRef(initialValue)'
+  },
+  'useMemo': {
+    description: 'React Hook: Caches the result of a calculation between re-renders.',
+    docUrl: 'https://react.dev/reference/react/useMemo',
+    signature: 'const memoized = useMemo(() => compute(), [deps])'
+  },
+  'useCallback': {
+    description: 'React Hook: Caches a function definition between re-renders.',
+    docUrl: 'https://react.dev/reference/react/useCallback',
+    signature: 'const fn = useCallback(() => { }, [deps])'
+  },
 };
 
 export function getHoverInfo(word: string): HoverInfo | null {
