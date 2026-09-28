@@ -411,7 +411,7 @@ export default function App() {
                       className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <a
-                      href="https://aistudio.google.com/app/apikey"
+                      href="https://aistudio.google.com/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-blue-500 hover:underline mt-2 inline-flex items-center gap-1"
