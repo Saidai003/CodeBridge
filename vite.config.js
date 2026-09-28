@@ -3,8 +3,8 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
+  base: "./",
   plugins: [react(), tailwindcss()],
-  base: '/lander/', // 👈 Cambia la barra sola '/' por '/lander/' para que los archivos se enlacen bien
   server: {
     host: "0.0.0.0",
     port: 3000,
