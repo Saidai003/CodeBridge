@@ -174,7 +174,8 @@ INSTRUCTIONS:
    - Core language syntax / documentation reference (1-2 bullet points)
    - Key variables/types involved (1 short line)
 4. Keep the total output brief (maximum 3-5 lines).
-5. You MUST respond STRICTLY in ${langName}.`;
+5. Use clean Markdown formatting (e.g. **bold** for key terms, \`code\` for variables and syntax, bullet points).
+6. You MUST respond STRICTLY in ${langName}.`;
 
   const response = await fetch(url, {
     method: 'POST',

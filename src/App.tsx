@@ -4,6 +4,7 @@ import {
   BookOpen, Globe, Terminal, Loader2, Check, ExternalLink, Sun, Moon
 } from 'lucide-react';
 import { Language, t } from './i18n';
+import ReactMarkdown from 'react-markdown';
 import { translatePseudocode, generateFragmentDetails, type Mapping, type TranslationResult } from './lib/gemini-client';
 import { validateMappings, getColorForIndex, getActiveColorForIndex, getBorderColorForIndex } from './lib/mapping';
 import { executePython, initPyodide } from './lib/pyodide';
@@ -604,10 +605,27 @@ export default function App() {
                       <span className="text-sm">{t('loadingDetails', lang)}</span>
                     </div>
                   ) : fragmentDetails[expandedFragment] ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                      <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                    <div className="prose prose-sm dark:prose-invert max-w-none text-sm text-gray-700 dark:text-gray-300">
+                      <ReactMarkdown
+                        components={{
+                          p: ({children}) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                          strong: ({children}) => <strong className="font-semibold text-gray-900 dark:text-gray-100">{children}</strong>,
+                          em: ({children}) => <em className="italic">{children}</em>,
+                          code: ({children, className}) => {
+                            const isInline = !className;
+                            return isInline ? (
+                              <code className="bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded text-xs font-mono border border-blue-200 dark:border-blue-800">{children}</code>
+                            ) : (
+                              <code className={`${className} block bg-gray-900 text-green-400 p-3 rounded my-2 text-xs font-mono overflow-x-auto border border-gray-800`}>{children}</code>
+                            );
+                          },
+                          ul: ({children}) => <ul className="list-disc list-inside my-2 space-y-1">{children}</ul>,
+                          ol: ({children}) => <ol className="list-decimal list-inside my-2 space-y-1">{children}</ol>,
+                          li: ({children}) => <li className="text-sm">{children}</li>,
+                        }}
+                      >
                         {fragmentDetails[expandedFragment]}
-                      </div>
+                      </ReactMarkdown>
                     </div>
                   ) : null}
                 </div>
