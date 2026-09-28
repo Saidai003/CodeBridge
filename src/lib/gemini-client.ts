@@ -10,12 +10,20 @@ export interface TranslationResult {
   mappings: Mapping[];
 }
 
+const LANGUAGE_NAMES: Record<string, string> = {
+  es: 'Spanish',
+  en: 'English',
+  zh: 'Chinese (Simplified)',
+};
+
 export async function translatePseudocode(
   apiKey: string,
   pseudocode: string,
-  targetLanguage: string = 'python'
+  targetLanguage: string = 'python',
+  userLanguage: string = 'es'
 ): Promise<TranslationResult> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+  const langName = LANGUAGE_NAMES[userLanguage] || userLanguage;
 
   const prompt = `You are a code translation assistant. Convert the following pseudo-code into valid ${targetLanguage} code.
 
@@ -37,7 +45,7 @@ Rules:
 - Each mapping connects a range of pseudo-code lines to a range of generated code lines
 - Mappings must not overlap
 - Include all lines in mappings
-- Labels should be brief (2-5 words)
+- Labels should be brief (2-5 words) and MUST be written in ${langName}
 - Generate clean, idiomatic ${targetLanguage} code
 
 Pseudo-code to translate:
@@ -82,25 +90,27 @@ export async function askAssistant(
   pseudocode: string,
   generatedCode: string,
   question: string,
-  history: Array<{ role: string; text: string }>
+  history: Array<{ role: string; text: string }>,
+  userLanguage: string = 'es'
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+  const langName = LANGUAGE_NAMES[userLanguage] || userLanguage;
 
-  const systemPrompt = `You are a contextual coding assistant for CodeBridge. You help students understand the relationship between pseudo-code and generated Python code.
+  const systemPrompt = `You are a contextual coding assistant for CodeBridge. You help students understand the relationship between pseudo-code and generated code.
 
 CURRENT CONTEXT:
 --- Pseudo-code ---
 ${pseudocode}
---- Generated Python Code ---
+--- Generated Code ---
 ${generatedCode}
 ---
 
 Rules:
 - Only answer questions related to the pseudo-code and code shown above
-- Explain WHY certain translations were made (e.g., "why a for loop instead of while")
-- Be concise and educational
+- Explain WHY certain translations were made
+- Be concise, direct, and educational
 - If the question is unrelated to the code context, politely redirect
-- Respond in the same language the user is using`;
+- Respond STRICTLY in ${langName}`;
 
   const contents = [
     { role: "user", parts: [{ text: systemPrompt }] },
@@ -139,11 +149,14 @@ export async function generateFragmentDetails(
   generatedCode: string,
   fragmentLabel: string,
   fragmentPseudocode: string,
-  fragmentCode: string
+  fragmentCode: string,
+  userLanguage: string = 'es'
 ): Promise<string> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+  const langName = LANGUAGE_NAMES[userLanguage] || userLanguage;
 
-  const prompt = `You are a code explanation assistant. Explain the following code fragment in detail.
+  const prompt = `You are a code documentation inspector (like a VS Code hover tooltip docs window).
+Provide a direct, concise, to-the-point technical overview for the selected fragment.
 
 FRAGMENT: "${fragmentLabel}"
 
@@ -153,28 +166,22 @@ ${fragmentPseudocode}
 GENERATED CODE:
 ${fragmentCode}
 
-FULL CONTEXT:
---- Complete Pseudo-code ---
-${pseudocode}
---- Complete Generated Code ---
-${generatedCode}
----
-
-Provide a detailed explanation covering:
-1. What this fragment does (its purpose)
-2. Why it exists (its role in the overall program)
-3. How it works (brief technical explanation)
-4. Key concepts or patterns used
-
-Be educational, clear, and concise. Explain as if teaching someone learning to code.
-Respond in the same language as the pseudo-code.`;
+INSTRUCTIONS:
+1. Act like a VS Code hover documentation tooltip.
+2. DO NOT use conversational greetings, preamble, or filler text (e.g. do NOT say "En este fragmento...", "Esta sección es para...", "Hola").
+3. Go STRAIGHT to the essential technical facts:
+   - What this fragment specifically does (1 short line)
+   - Core language syntax / documentation reference (1-2 bullet points)
+   - Key variables/types involved (1 short line)
+4. Keep the total output brief (maximum 3-5 lines).
+5. You MUST respond STRICTLY in ${langName}.`;
 
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3 }
+      generationConfig: { temperature: 0.2 }
     })
   });
 

@@ -103,7 +103,7 @@ export default function App() {
     if (!pseudocode.trim()) return;
     setIsGenerating(true);
     try {
-      const result: TranslationResult = await translatePseudocode(apiKey, pseudocode, targetLanguage);
+      const result: TranslationResult = await translatePseudocode(apiKey, pseudocode, targetLanguage, lang);
       const pseudoLines = pseudocode.split('\n').length;
       const codeLines = result.generated_code.split('\n').length;
       const validMappings = validateMappings(result.mappings || [], pseudoLines, codeLines);
@@ -192,7 +192,8 @@ export default function App() {
         generatedCode,
         mapping.label || `Fragment ${mappingId}`,
         fragmentPseudocode,
-        fragmentCode
+        fragmentCode,
+        lang
       );
 
       setFragmentDetails(prev => ({ ...prev, [mappingId]: details }));

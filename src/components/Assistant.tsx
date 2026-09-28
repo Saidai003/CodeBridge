@@ -45,7 +45,7 @@ export const Assistant: React.FC<AssistantProps> = ({
 
     try {
       const history = messages.map(m => ({ role: m.role, text: m.text }));
-      const response = await askAssistant(apiKey, pseudocode, generatedCode, userMsg, history);
+      const response = await askAssistant(apiKey, pseudocode, generatedCode, userMsg, history, lang);
       setMessages(prev => [...prev, { role: 'assistant', text: response }]);
     } catch (err: any) {
       setMessages(prev => [...prev, { role: 'assistant', text: `Error: ${err.message}` }]);
